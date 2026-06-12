@@ -11,11 +11,28 @@ from app.modules.catalog.constants import LEVEL_ORDER
 
 class ScoringService:
     def utility(self, db: Session, user: User, exercise: Exercise, *, allow_one_above: bool = False) -> float:
+        prefs, total_pulls = self.preference_snapshot(db, user.id)
+        return self.utility_from_snapshot(user, exercise, prefs, total_pulls, allow_one_above=allow_one_above)
+
+    def preference_snapshot(self, db: Session, user_id: int) -> tuple[dict[str, tuple[float, int]], int]:
+        rows = list(db.scalars(select(PreferenceScore).where(PreferenceScore.user_id == user_id)).all())
+        prefs = {row.exercise_id: (float(row.score), int(row.pulls)) for row in rows}
+        return prefs, sum(pulls for _score, pulls in prefs.values())
+
+    def utility_from_snapshot(
+        self,
+        user: User,
+        exercise: Exercise,
+        prefs: dict[str, tuple[float, int]],
+        total_pulls: int,
+        *,
+        allow_one_above: bool = False,
+    ) -> float:
         goal = self.goal_fit(user.goal, exercise)
         level = self.level_fit(user.level, exercise.level, allow_one_above=allow_one_above)
         equipment = self.equipment_pref(user, exercise)
-        preference = self.preference(db, user.id, exercise.id)
-        exploration = self.exploration_bonus(db, user.id, exercise.id)
+        preference, pulls = prefs.get(exercise.id, (0.5, 0))
+        exploration = self.exploration_bonus_from_snapshot(total_pulls, pulls)
         return round(
             0.30 * goal
             + 0.15 * level
@@ -92,6 +109,9 @@ class ScoringService:
         )
         score = db.get(PreferenceScore, {"user_id": user_id, "exercise_id": exercise_id})
         pulls = score.pulls if score else 0
+        return self.exploration_bonus_from_snapshot(total_pulls or 0, pulls)
+
+    def exploration_bonus_from_snapshot(self, total_pulls: int, pulls: int) -> float:
         if total_pulls is None or total_pulls <= 0:
             return 1.0
         return min(1.0, math.sqrt(math.log(total_pulls + 1) / (pulls + 1)))

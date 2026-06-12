@@ -57,6 +57,22 @@ MOVEMENT_PATTERNS = [
 
 GOALS = ["strength", "hypertrophy", "fat_loss", "endurance", "mobility"]
 
+EQUIPMENT_VALUES = {
+    "body only",
+    "dumbbell",
+    "barbell",
+    "cable",
+    "machine",
+    "kettlebells",
+    "bands",
+    "medicine ball",
+    "exercise ball",
+    "foam roll",
+    "e-z curl bar",
+    "pull-up bar",
+    "other",
+}
+
 PRESCRIPTIONS = {
     "strength": {"sets": 4, "reps": "4-6", "rest_sec": 180, "rpe_target": 8},
     "hypertrophy": {"sets": 3, "reps": "8-12", "rest_sec": 90, "rpe_target": 8},

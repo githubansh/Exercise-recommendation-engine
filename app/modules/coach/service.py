@@ -63,8 +63,7 @@ class CoachService:
         text = message.lower()
         slot_id = self.extract_int_after(text, "slot")
         day_id = self.extract_int_after(text, "day")
-        if "current" in text or "plan" in text and "generate" not in text:
-            return {"name": "get_current_plan", "arguments": {}}
+
         if "explain" in text and slot_id:
             return {"name": "explain_slot", "arguments": {"slot_id": slot_id}}
         if ("alternative" in text or "swap option" in text) and slot_id:
@@ -91,6 +90,8 @@ class CoachService:
                     "skipped": skipped,
                 },
             }
+        if ("current" in text) or ("plan" in text and "generate" not in text):
+            return {"name": "get_current_plan", "arguments": {}}
         return None
 
     def execute_tool(self, db: Session, user_id: int, name: str, arguments: dict[str, Any]) -> dict:
@@ -178,7 +179,7 @@ class CoachService:
                 kept.append(slot)
                 elapsed += reduced_sets * minutes_per_set
                 continue
-            slot.status = "skipped"
+            slot.status = "deferred"
         db.commit()
         return {
             "plan_day_id": plan_day_id,

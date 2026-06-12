@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.core.llm import get_llm_client
 from app.core.config import settings
 from app.core.models import Exercise, InjuryProfile, User, UserExclusion, UserInjury
+from app.modules.catalog.constants import EQUIPMENT_VALUES, GOALS, LEVEL_ORDER
 from app.modules.catalog.service import catalog_service
 from app.modules.catalog.utils import query_similarity
 
@@ -36,8 +37,10 @@ class ParsedIntake(BaseModel):
 
 class ProfileService:
     def create_user(self, db: Session, payload: dict) -> User:
+        payload = dict(payload)
         injuries = payload.pop("injuries", [])
         exclusions = payload.pop("exclusions", [])
+        self.validate_create_payload(db, payload, injuries, exclusions)
         user = User(**payload)
         db.add(user)
         db.flush()
@@ -61,6 +64,35 @@ class ProfileService:
         db.commit()
         db.refresh(user)
         return user
+
+    def validate_create_payload(self, db: Session, payload: dict, injuries: list[dict], exclusions: list[dict]) -> None:
+        level = payload.get("level")
+        if level not in LEVEL_ORDER:
+            raise ValueError(f"Unknown level: {level}. Allowed: {sorted(LEVEL_ORDER)}")
+        goal = payload.get("goal")
+        if goal not in GOALS:
+            raise ValueError(f"Unknown goal: {goal}. Allowed: {GOALS}")
+        equipment = set(payload.get("equipment") or [])
+        unknown_equipment = sorted(equipment - EQUIPMENT_VALUES)
+        if unknown_equipment:
+            raise ValueError(f"Unknown equipment: {unknown_equipment}. Allowed: {sorted(EQUIPMENT_VALUES)}")
+
+        valid_codes = set(db.scalars(select(InjuryProfile.code)).all())
+        invalid_codes = sorted({injury["injury_code"] for injury in injuries if injury["injury_code"] not in valid_codes})
+        if invalid_codes:
+            raise ValueError(f"Invalid injury codes: {invalid_codes}. Allowed: {sorted(valid_codes)}")
+        invalid_severities = sorted(
+            {injury.get("severity", "moderate") for injury in injuries if injury.get("severity", "moderate") not in SEVERITIES}
+        )
+        if invalid_severities:
+            raise ValueError(f"Invalid injury severities: {invalid_severities}. Allowed: {sorted(SEVERITIES)}")
+
+        exclusion_ids = {exclusion["exercise_id"] for exclusion in exclusions}
+        if exclusion_ids:
+            found_ids = set(db.scalars(select(Exercise.id).where(Exercise.id.in_(exclusion_ids))).all())
+            missing_ids = sorted(exclusion_ids - found_ids)
+            if missing_ids:
+                raise ValueError(f"Invalid exclusion exercise ids: {missing_ids}")
 
     def get_user(self, db: Session, user_id: int) -> User | None:
         return db.get(User, user_id)
@@ -160,8 +192,6 @@ class ProfileService:
             phrase = re.split(r"\b(?:and|but|because|with|due|when|while)\b|[,.]", phrase)[0].strip()
             if phrase:
                 names.append(phrase)
-        if "burpee" in text and "burpee" not in names:
-            names.append("burpee")
         return names[:10]
 
     def extract_preferences(self, free_text: str) -> str:

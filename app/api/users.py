@@ -13,7 +13,10 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 @router.post("")
 def create_user(payload: UserCreate, db: Session = Depends(get_db)) -> dict:
-    user = profile_service.create_user(db, payload.model_dump())
+    try:
+        user = profile_service.create_user(db, payload.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return user_dict(user)
 
 

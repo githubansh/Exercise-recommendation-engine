@@ -158,7 +158,7 @@
 "Barbell_Rollout_from_Bench":
   []
 "Barbell_Seated_Calf_Raise":
-  - deep_knee_flexion
+  []
 "Barbell_Shoulder_Press":
   - deep_knee_flexion
   - overhead_position
@@ -190,7 +190,6 @@
   - deep_knee_flexion
   - lunge_pattern
 "Barbell_Walking_Lunge":
-  - carry
   - deep_knee_flexion
   - lunge_pattern
 "Battling_Ropes":
@@ -261,7 +260,6 @@
   - deep_knee_flexion
   - squat_pattern
 "Bodyweight_Walking_Lunge":
-  - carry
   - deep_knee_flexion
   - lunge_pattern
 "Bosu_Ball_Cable_Crunch_With_Side_Bends":
@@ -363,9 +361,8 @@
   - spinal_loading
   - squat_pattern
 "Calf_Raise_On_A_Dumbbell":
-  - deep_knee_flexion
+  []
 "Calf_Raises_-_With_Bands":
-  - deep_knee_flexion
   - overhead_position
 "Calf_Stretch_Elbows_Against_Wall":
   []
@@ -505,7 +502,6 @@
 "Cocoons":
   - spinal_flexion
 "Conans_Wheel":
-  - carry
   - spinal_loading
 "Concentration_Curls":
   - hip_hinge
@@ -580,7 +576,7 @@
 "Dips_-_Triceps_Version":
   - horizontal_push
 "Donkey_Calf_Raises":
-  - deep_knee_flexion
+  []
 "Double_Kettlebell_Alternating_Hang_Clean":
   - hip_hinge
   - overhead_position
@@ -678,7 +674,7 @@
 "Dumbbell_Seated_Box_Jump":
   - high_impact
 "Dumbbell_Seated_One-Leg_Calf_Raise":
-  - deep_knee_flexion
+  []
 "Dumbbell_Shoulder_Press":
   - overhead_position
   - vertical_push
@@ -719,7 +715,6 @@
   - deep_knee_flexion
   - lunge_pattern
 "Elevated_Cable_Rows":
-  - deep_knee_flexion
   - horizontal_pull
 "Elliptical_Trainer":
   []
@@ -949,7 +944,7 @@
 "Iliotibial_Tract-SMR":
   []
 "Inchworm":
-  - carry
+  []
 "Incline_Barbell_Triceps_Extension":
   - overhead_position
   - spinal_loading
@@ -1735,6 +1730,7 @@
   - carry
   - spinal_loading
 "Rickshaw_Deadlift":
+  - carry
   - hip_hinge
   - spinal_loading
 "Ring_Dips":
@@ -1747,9 +1743,7 @@
   - overhead_position
   - squat_pattern
 "Rocking_Standing_Calf_Raise":
-  - deep_knee_flexion
-  - spinal_loading
-  - squat_pattern
+  []
 "Rocky_Pull-Ups_Pulldowns":
   - vertical_pull
 "Romanian_Deadlift":
@@ -1816,7 +1810,7 @@
   - overhead_position
   - vertical_push
 "Seated_Calf_Raise":
-  - deep_knee_flexion
+  []
 "Seated_Calf_Stretch":
   - spinal_flexion
   - spinal_loading
@@ -1966,7 +1960,7 @@
   - deep_knee_flexion
   - squat_pattern
 "Skating":
-  - carry
+  []
 "Sled_Drag_-_Harness":
   []
 "Sled_Overhead_Backward_Walk":
@@ -1994,7 +1988,7 @@
 "Smith_Machine_Bent_Over_Row":
   - horizontal_pull
 "Smith_Machine_Calf_Raise":
-  - deep_knee_flexion
+  []
 "Smith_Machine_Close-Grip_Bench_Press":
   - horizontal_push
 "Smith_Machine_Decline_Press":
@@ -2023,7 +2017,7 @@
   - spinal_loading
   - squat_pattern
 "Smith_Machine_Reverse_Calf_Raises":
-  - deep_knee_flexion
+  []
 "Smith_Machine_Squat":
   - deep_knee_flexion
   - spinal_loading
@@ -2139,7 +2133,6 @@
   - spinal_loading
   - squat_pattern
 "Stairmaster":
-  - carry
   - high_impact
 "Standing_Alternating_Dumbbell_Press":
   - hip_hinge
@@ -2147,9 +2140,7 @@
   - spinal_loading
   - vertical_push
 "Standing_Barbell_Calf_Raise":
-  - deep_knee_flexion
-  - spinal_loading
-  - squat_pattern
+  []
 "Standing_Barbell_Press_Behind_Neck":
   - deep_knee_flexion
   - overhead_position
@@ -2176,11 +2167,11 @@
 "Standing_Cable_Wood_Chop":
   - high_impact
 "Standing_Calf_Raises":
-  - deep_knee_flexion
+  []
 "Standing_Concentration_Curl":
   - horizontal_pull
 "Standing_Dumbbell_Calf_Raise":
-  - deep_knee_flexion
+  []
 "Standing_Dumbbell_Press":
   - overhead_position
   - vertical_push
@@ -2272,7 +2263,6 @@
   - lunge_pattern
   - spinal_flexion
 "Step_Mill":
-  - carry
   - high_impact
 "Stiff-Legged_Barbell_Deadlift":
   - hip_hinge
@@ -2366,7 +2356,6 @@
 "Torso_Rotation":
   - rotation
 "Trail_Running_Walking":
-  - carry
   - high_impact
 "Trap_Bar_Deadlift":
   - hip_hinge
@@ -2429,7 +2418,6 @@
   - high_impact
   - hip_hinge
 "Walking_Treadmill":
-  - carry
   - high_impact
 "Weighted_Ball_Hyperextension":
   - spinal_loading

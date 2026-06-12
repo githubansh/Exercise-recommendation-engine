@@ -8,7 +8,9 @@ app = FastAPI(title=settings.app_name)
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok"}
+    from app.modules.catalog.service import vector_search_status
+
+    return {"status": "ok", "embeddings": vector_search_status()}
 
 
 app.include_router(users.router)

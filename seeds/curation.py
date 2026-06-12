@@ -3,41 +3,8 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any
 
-LEVEL_ORDER = {"beginner": 0, "intermediate": 1, "expert": 2}
-SEVERITY_ORDER = {"mild": 0, "moderate": 1, "severe": 2}
+from app.modules.catalog.constants import MUSCLE_GROUP_MAP, TRAINABLE_GROUPS
 
-MUSCLE_GROUP_MAP = {
-    "chest": "chest",
-    "lats": "back",
-    "middle back": "back",
-    "traps": "back",
-    "lower back": "lower_back",
-    "shoulders": "shoulders",
-    "neck": "shoulders",
-    "biceps": "biceps",
-    "triceps": "triceps",
-    "forearms": "triceps",
-    "quadriceps": "quads",
-    "adductors": "quads",
-    "hamstrings": "posterior_chain",
-    "glutes": "posterior_chain",
-    "abductors": "posterior_chain",
-    "calves": "calves",
-    "abdominals": "abs",
-}
-
-TRAINABLE_GROUPS = [
-    "chest",
-    "back",
-    "lower_back",
-    "shoulders",
-    "biceps",
-    "triceps",
-    "quads",
-    "posterior_chain",
-    "calves",
-    "abs",
-]
 
 MOVEMENT_PATTERNS = [
     "squat_pattern",
@@ -141,18 +108,17 @@ def tag_movement_patterns(exercise: dict[str, Any]) -> list[str]:
     equipment = normalize_equipment(exercise)
     category = exercise.get("category", "")
     force = normalize_force(exercise)
+    is_calf_isolation = "calf raise" in name or ("calf raise" in text and "calves" in primary)
     tags: set[str] = set()
 
-    if any(word in text for word in ["squat", "leg press", "wall sit"]):
+    if not is_calf_isolation and any(word in text for word in ["squat", "leg press", "wall sit"]):
         tags.update(["squat_pattern", "deep_knee_flexion"])
-    if any(word in text for word in ["lunge", "split squat", "step-up", "step up", "pistol"]):
+    if not is_calf_isolation and any(word in text for word in ["lunge", "split squat", "step-up", "step up", "pistol"]):
         tags.update(["lunge_pattern", "deep_knee_flexion"])
     if any(word in text for word in ["deadlift", "good morning", "hip hinge", "pull-through", "pull through", "hip thrust", "glute bridge", "swing"]):
         tags.add("hip_hinge")
     if any(word in text for word in ["clean", "snatch", "jerk"]):
         tags.update(["hip_hinge", "spinal_loading", "overhead_position"])
-    if "calf raise" in text:
-        tags.add("deep_knee_flexion")
 
     if category == "plyometrics" or any(word in text for word in ["jump", "bound", "burpee", "sprint", "running", "run ", "hop", "leap"]):
         tags.add("high_impact")
@@ -178,7 +144,7 @@ def tag_movement_patterns(exercise: dict[str, Any]) -> list[str]:
     if force == "pull" and "biceps" in primary:
         tags.add("horizontal_pull")
 
-    if any(word in text for word in ["carry", "farmer", "suitcase walk", "walking"]):
+    if any(word in text for word in ["carry", "farmer", "suitcase", "yoke", "rickshaw"]):
         tags.add("carry")
     if equipment in {"barbell", "kettlebells", "machine"} and (
         "squat_pattern" in tags

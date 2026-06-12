@@ -57,21 +57,24 @@ class FeedbackService:
         day = db.get(PlanDay, plan_day_id)
         if day is None:
             raise ValueError(f"Plan day {plan_day_id} does not exist")
+        existing = db.scalar(select(SessionLog).where(SessionLog.plan_day_id == plan_day_id))
+        if existing:
+            raise ValueError(f"Day {plan_day_id} already has a logged session (id={existing.id}).")
         plan = db.get(Plan, day.plan_id)
         user = plan_user(db, plan)
+        planned_ids = {slot.id for slot in day.slots}
+        submitted_ids = set(completed_slot_ids) | set(skipped_slot_ids)
+        unknown_ids = sorted(submitted_ids - planned_ids)
+        if unknown_ids:
+            raise ValueError(f"Slots {unknown_ids} do not belong to day {plan_day_id}")
         log = SessionLog(plan_day_id=plan_day_id, rpe=rpe, duration_min=duration_min, notes=notes)
         db.add(log)
         db.flush()
-        planned_ids = {slot.id for slot in day.slots}
         for slot_id in completed_slot_ids:
-            if slot_id not in planned_ids:
-                raise ValueError(f"Slot {slot_id} does not belong to day {plan_day_id}")
             slot = db.get(PlanSlot, slot_id)
             reward = slot_reward(rpe, slot.rpe_target, completed=True)
             self.record_slot_feedback(db, log.id, user.id, slot, "completed", reward)
         for slot_id in skipped_slot_ids:
-            if slot_id not in planned_ids:
-                raise ValueError(f"Slot {slot_id} does not belong to day {plan_day_id}")
             slot = db.get(PlanSlot, slot_id)
             self.record_slot_feedback(db, log.id, user.id, slot, "skipped", 0.0)
         db.commit()
@@ -95,6 +98,8 @@ class FeedbackService:
         plan = db.get(Plan, plan_id)
         if plan is None:
             raise ValueError(f"Plan {plan_id} does not exist")
+        if plan.status != "active":
+            raise ValueError(f"Plan {plan_id} is {plan.status}; only the active plan can be adapted.")
         user = plan_user(db, plan)
         planned_slots = list(
             db.scalars(
@@ -103,8 +108,9 @@ class FeedbackService:
                 .where(PlanDay.plan_id == plan.id)
             ).all()
         )
-        completed = [slot for slot in planned_slots if slot.status == "completed"]
-        adherence = len(completed) / max(len(planned_slots), 1)
+        countable = [slot for slot in planned_slots if slot.status != "deferred"]
+        completed = [slot for slot in countable if slot.status == "completed"]
+        adherence = len(completed) / max(len(countable), 1)
         rpes = list(db.scalars(select(SessionLog.rpe).join(PlanDay, PlanDay.id == SessionLog.plan_day_id).where(PlanDay.plan_id == plan.id)).all())
         mean_rpe = mean([rpe for rpe in rpes if rpe is not None]) if rpes else 7
         policy = adaptation_policy(adherence, mean_rpe, user.days_per_week)

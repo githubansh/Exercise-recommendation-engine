@@ -1,11 +1,11 @@
 from app.modules.profile.service import ProfileService
 
 
-def test_deterministic_intake_extracts_knee_and_burpees() -> None:
-    parsed = ProfileService().deterministic_parse("my knee hurts when I squat deep and I hate burpees")
+def test_deterministic_intake_extracts_knee_and_lunges() -> None:
+    parsed = ProfileService().deterministic_parse("my knee hurts when I squat deep and I hate lunges")
     assert [injury.code for injury in parsed.injuries] == ["knee_pain"]
     assert parsed.injuries[0].severity == "moderate"
-    assert "burpee" in parsed.exclusions_by_name
+    assert "lunges" in parsed.exclusions_by_name
 
 
 def test_deterministic_intake_detects_severe_lower_back() -> None:

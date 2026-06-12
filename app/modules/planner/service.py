@@ -27,6 +27,7 @@ from app.modules.scoring.service import scoring_service
 class Candidate:
     exercise: Exercise
     score: float
+    embedding: list[float] | None = None
 
 
 @dataclass
@@ -38,6 +39,7 @@ class SlotDraft:
     rest_sec: int
     rpe_target: int
     score: float
+    embedding: list[float] | None = None
     rationale_note: str = ""
 
 
@@ -122,6 +124,7 @@ class PlannerService:
                     rest_sec=prescription["rest_sec"],
                     rpe_target=prescription["rpe_target"],
                     score=candidate.score,
+                    embedding=candidate.embedding,
                     rationale_note="challenging - go slow" if allow_progression else "",
                 )
                 day_slots.append(draft)
@@ -199,8 +202,20 @@ class PlannerService:
             categories=categories,
             allow_one_above=allow_one_above,
         )
+        vectors = catalog_service.embedding_vectors(db, {exercise.id for exercise in exercises})
+        prefs, total_pulls = scoring_service.preference_snapshot(db, user.id)
         candidates = [
-            Candidate(exercise=exercise, score=scoring_service.utility(db, user, exercise, allow_one_above=allow_one_above))
+            Candidate(
+                exercise=exercise,
+                score=scoring_service.utility_from_snapshot(
+                    user,
+                    exercise,
+                    prefs,
+                    total_pulls,
+                    allow_one_above=allow_one_above,
+                ),
+                embedding=vectors.get(exercise.id),
+            )
             for exercise in exercises
             if exercise.id not in blocked_ids and exercise.muscle_groups
         ]
@@ -283,7 +298,7 @@ class PlannerService:
                 continue
             if previous_groups and self.violates_recovery(group, exercise, previous_groups, full_body):
                 continue
-            if not relax_similarity and any(lexical_similarity(exercise, slot.exercise) >= 0.80 for slot in day_slots):
+            if not relax_similarity and any(self.is_too_similar(candidate, slot) for slot in day_slots):
                 continue
             _minimum, maximum = targets.get(group, (0, 99))
             if not relax_volume and weekly_sets.get(group, 0) + prescription_sets > maximum:
@@ -359,6 +374,7 @@ class PlannerService:
                     rest_sec=STRETCH_PRESCRIPTION["rest_sec"],
                     rpe_target=STRETCH_PRESCRIPTION["rpe_target"],
                     score=candidate.score,
+                    embedding=candidate.embedding,
                     rationale_note="mobility finisher",
                 )
             )
@@ -367,6 +383,15 @@ class PlannerService:
 
     def sort_day_slots(self, slots: list[SlotDraft]) -> None:
         slots.sort(key=lambda slot: (slot.exercise.mechanic != "compound", slot.exercise.category == "stretching", -slot.score, slot.exercise.id))
+
+    def is_too_similar(self, candidate: Candidate, slot: SlotDraft) -> bool:
+        if candidate.embedding is not None and slot.embedding is not None:
+            from app.modules.catalog.service import cosine_vectors
+
+            similarity = cosine_vectors(candidate.embedding, slot.embedding)
+            if similarity is not None:
+                return similarity >= 0.85
+        return lexical_similarity(candidate.exercise, slot.exercise) >= 0.80
 
     def repair_volume(
         self,

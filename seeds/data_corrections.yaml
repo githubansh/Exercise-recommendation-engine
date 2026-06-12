@@ -11,6 +11,11 @@ equipment_overrides:
   Scapular_Pull-Up: pull-up bar
   V-Bar_Pullup: pull-up bar
   Wide-Grip_Rear_Pull-Up: pull-up bar
+  Wind_Sprints: pull-up bar
+  Decline_Crunch: other
+  Decline_Oblique_Crunch: other
+  Decline_Reverse_Crunch: other
+  Natural_Glute_Ham_Raise: other
 
 force_overrides:
   Balance_Board: static
