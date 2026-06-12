@@ -1,0 +1,99 @@
+knee_pain:
+  display_name: Knee pain
+  description: Avoid deep knee flexion, high-impact landings, and loaded squat/lunge patterns as severity increases.
+  blocks:
+    - pattern: deep_knee_flexion
+      min_severity: mild
+    - pattern: high_impact
+      min_severity: mild
+    - pattern: lunge_pattern
+      min_severity: moderate
+    - pattern: squat_pattern
+      min_severity: severe
+
+lower_back_pain:
+  display_name: Lower back pain
+  description: Avoid axial loading, spinal flexion, and heavy hip-hinge patterns according to severity.
+  blocks:
+    - pattern: spinal_loading
+      min_severity: mild
+    - pattern: spinal_flexion
+      min_severity: moderate
+    - pattern: hip_hinge
+      min_severity: severe
+
+shoulder_impingement:
+  display_name: Shoulder impingement
+  description: Avoid overhead positions and pressing patterns that can aggravate shoulder symptoms.
+  blocks:
+    - pattern: overhead_position
+      min_severity: mild
+    - pattern: vertical_push
+      min_severity: moderate
+    - pattern: horizontal_push
+      min_severity: severe
+
+wrist_pain:
+  display_name: Wrist pain
+  description: Avoid exercises that place bodyweight or high load through extended wrists.
+  blocks:
+    - pattern: wrist_loading
+      min_severity: mild
+
+elbow_tendinitis:
+  display_name: Elbow tendinitis
+  description: Avoid pulling patterns and direct arm isolation when symptoms are significant.
+  blocks:
+    - pattern: vertical_pull
+      min_severity: moderate
+    - pattern: horizontal_pull
+      min_severity: severe
+
+ankle_instability:
+  display_name: Ankle instability
+  description: Avoid high-impact drills and lateral or loaded lunge patterns as severity increases.
+  blocks:
+    - pattern: high_impact
+      min_severity: mild
+    - pattern: lunge_pattern
+      min_severity: moderate
+
+hip_pain:
+  display_name: Hip pain
+  description: Avoid lunge positions first, then deep flexion and hinge patterns at higher severities.
+  blocks:
+    - pattern: lunge_pattern
+      min_severity: mild
+    - pattern: deep_knee_flexion
+      min_severity: moderate
+    - pattern: hip_hinge
+      min_severity: moderate
+
+neck_pain:
+  display_name: Neck pain
+  description: Avoid spinal loading and overhead positions that can stress the neck and upper traps.
+  blocks:
+    - pattern: spinal_loading
+      min_severity: mild
+    - pattern: overhead_position
+      min_severity: moderate
+
+hernia_recovery:
+  display_name: Hernia recovery
+  description: Avoid bracing-heavy loading, spinal flexion, and impact work unless cleared by a clinician.
+  blocks:
+    - pattern: spinal_loading
+      min_severity: mild
+    - pattern: spinal_flexion
+      min_severity: mild
+    - pattern: high_impact
+      min_severity: mild
+
+hamstring_strain:
+  display_name: Hamstring strain
+  description: Avoid hinge loading and high-impact speed or jumping work during recovery.
+  blocks:
+    - pattern: hip_hinge
+      min_severity: mild
+    - pattern: high_impact
+      min_severity: mild

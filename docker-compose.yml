@@ -1,0 +1,36 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: fitengine
+      POSTGRES_USER: fitengine
+      POSTGRES_PASSWORD: fitengine
+    ports:
+      - "5432:5432"
+    volumes:
+      - fitengine_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fitengine -d fitengine"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build: .
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://fitengine:fitengine@db:5432/fitengine
+      EMBEDDING_MODEL_NAME: sentence-transformers/all-MiniLM-L6-v2
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-flash-latest}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/app
+
+volumes:
+  fitengine_pgdata:

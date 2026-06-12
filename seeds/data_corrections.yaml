@@ -1,0 +1,66 @@
+# Explicit audit corrections layered on top of the raw free-exercise-db JSON.
+# Heuristics in seeds/curation.py still handle broad normalization, but these
+# entries make the known corrections inspectable and repeatable.
+
+equipment_overrides:
+  Chin-Up: pull-up bar
+  Gorilla_Chin_Crunch: pull-up bar
+  Hanging_Leg_Raise: pull-up bar
+  Hanging_Pike: pull-up bar
+  Pullups: pull-up bar
+  Scapular_Pull-Up: pull-up bar
+  V-Bar_Pullup: pull-up bar
+  Wide-Grip_Rear_Pull-Up: pull-up bar
+
+force_overrides:
+  Balance_Board: static
+  Band_Assisted_Pull-Up: pull
+  Bicycling: push
+  Bicycling_Stationary: push
+  Carioca_Quick_Step: push
+  Conans_Wheel: static
+  Elliptical_Trainer: push
+  Farmers_Walk: static
+  Inchworm: static
+  Incline_Inner_Biceps_Curl: pull
+  Internal_Rotation_with_Band: pull
+  Jogging_Treadmill: push
+  Linear_Acceleration_Wall_Drill: push
+  Lying_Prone_Quadriceps: static
+  Moving_Claw_Series: push
+  Push-Up_Wide: push
+  Recumbent_Bike: push
+  Rickshaw_Carry: static
+  Rope_Jumping: push
+  Rowing_Stationary: pull
+  Running_Treadmill: push
+  Single_Dumbbell_Raise: pull
+  Skating: push
+  Smith_Machine_Decline_Press: push
+  Stairmaster: push
+  Step_Mill: push
+  Trail_Running_Walking: push
+  Walking_Treadmill: push
+  Yoke_Walk: static
+
+instruction_backfills:
+  Iron_Cross:
+    - Stand tall with the arms extended out to the sides at shoulder height.
+    - Brace the torso and hold the position without shrugging the shoulders.
+    - Keep breathing steadily and stop if the shoulders or neck feel painful.
+  One-Arm_Kettlebell_Swings:
+    - Stand with the kettlebell slightly in front of you and hinge at the hips.
+    - Swing the kettlebell back between the legs, then drive the hips forward to float it to chest height.
+    - Keep the spine neutral, switch arms between sets, and use a light load until technique is consistent.
+  Push_Press:
+    - Start with the weight at shoulder height and feet about hip width apart.
+    - Dip slightly through the knees, then drive upward with the legs and press the weight overhead.
+    - Lower under control back to the shoulders and keep the ribs down throughout the movement.
+  Side_Bridge:
+    - Lie on one side with the elbow under the shoulder and legs stacked or staggered.
+    - Lift the hips until the body forms a straight line from head to feet.
+    - Hold the position while breathing steadily, then repeat on the other side.
+  Side_Jackknife:
+    - Lie on one side with the legs straight and one hand lightly supporting the head.
+    - Lift the top leg and torso toward each other using the side abdominals.
+    - Lower slowly and repeat before switching sides.

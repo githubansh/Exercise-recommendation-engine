@@ -1,0 +1,19 @@
+from app.modules.profile.service import ProfileService
+
+
+def test_deterministic_intake_extracts_knee_and_burpees() -> None:
+    parsed = ProfileService().deterministic_parse("my knee hurts when I squat deep and I hate burpees")
+    assert [injury.code for injury in parsed.injuries] == ["knee_pain"]
+    assert parsed.injuries[0].severity == "moderate"
+    assert "burpee" in parsed.exclusions_by_name
+
+
+def test_deterministic_intake_detects_severe_lower_back() -> None:
+    parsed = ProfileService().deterministic_parse("sharp lower back pain after deadlifts")
+    assert parsed.injuries[0].code == "lower_back_pain"
+    assert parsed.injuries[0].severity == "severe"
+
+
+def test_preferences_do_not_match_dislike() -> None:
+    parsed = ProfileService().deterministic_parse("I dislike mountain climbers but prefer dumbbells")
+    assert parsed.preferences_text == "dumbbells"
