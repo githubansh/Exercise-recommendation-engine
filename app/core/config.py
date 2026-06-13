@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -14,6 +15,13 @@ class Settings(BaseSettings):
     imagekit_base_url: str = "https://ik.imagekit.io/yuhonas"
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
     random_seed: int = 42
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def use_psycopg_driver(cls, value: str) -> str:
+        if isinstance(value, str) and value.startswith("postgresql://"):
+            return value.replace("postgresql://", "postgresql+psycopg://", 1)
+        return value
 
 
 @lru_cache
