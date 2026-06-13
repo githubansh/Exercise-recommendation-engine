@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     embedding_model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
     gemini_api_key: str | None = None
     gemini_model: str = "gemini-flash-latest"
+    imagekit_base_url: str = "https://ik.imagekit.io/yuhonas"
+    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
     random_seed: int = 42
 
 

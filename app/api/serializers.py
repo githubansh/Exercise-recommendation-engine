@@ -1,6 +1,13 @@
 from __future__ import annotations
 
 from app.core.models import Exercise, Plan, PlanDay, PlanSlot, User
+from app.core.config import settings
+
+
+def image_url(path: str) -> str:
+    if path.startswith("http://") or path.startswith("https://"):
+        return path
+    return f"{settings.imagekit_base_url.rstrip('/')}/{path.lstrip('/')}"
 
 
 def exercise_dict(exercise: Exercise) -> dict:
@@ -17,6 +24,7 @@ def exercise_dict(exercise: Exercise) -> dict:
         "muscle_groups": exercise.muscle_groups,
         "instructions": exercise.instructions,
         "images": exercise.images,
+        "image_urls": [image_url(path) for path in exercise.images],
     }
 
 

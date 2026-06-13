@@ -43,6 +43,30 @@ class UserCreate(BaseModel):
         return values
 
 
+class UserUpdate(BaseModel):
+    name: str | None = None
+    age: int | None = None
+    sex: str | None = None
+    height_cm: int | None = None
+    weight_kg: int | None = None
+    level: str | None = None
+    goal: str | None = None
+    days_per_week: int | None = Field(default=None, ge=2, le=6)
+    minutes_per_session: int | None = Field(default=None, gt=0)
+    equipment: list[str] | None = None
+
+    @field_validator("equipment")
+    @classmethod
+    def validate_equipment(cls, values: list[str] | None) -> list[str] | None:
+        if values is None:
+            return values
+        unknown = sorted(set(values) - EQUIPMENT_VALUES)
+        if unknown:
+            allowed = ", ".join(sorted(EQUIPMENT_VALUES))
+            raise ValueError(f"Unknown equipment: {unknown}. Allowed: {allowed}")
+        return values
+
+
 class PlanGenerateRequest(BaseModel):
     user_id: int
     week_index: int = 1
@@ -62,6 +86,10 @@ class SessionLogRequest(BaseModel):
 
 
 class IntakeTextRequest(BaseModel):
+    text: str
+
+
+class IntakePreviewRequest(BaseModel):
     text: str
 
 

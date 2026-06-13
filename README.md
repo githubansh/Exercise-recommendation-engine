@@ -38,6 +38,14 @@ Run tests:
 docker compose exec app python -m pytest -q
 ```
 
+## Frontend
+
+The prototype UI is maintained separately from this backend repository:
+
+- Frontend repo: <https://github.com/githubansh/Exercise-recommendation-engine-frontend>
+- Local dev URL: <http://127.0.0.1:5173/>
+- Backend API URL: <http://localhost:8000/>
+
 ## Current Build Slice
 
 The backend covers setup, ingestion, curation scaffolding, MiniLM embeddings,

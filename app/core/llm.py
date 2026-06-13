@@ -8,6 +8,15 @@ from app.core.config import settings
 
 class LLMClient(ABC):
     @abstractmethod
+    def chat(
+        self,
+        system_prompt: str,
+        messages: list[dict[str, str]],
+        temperature: float = 0.4,
+    ) -> str:
+        raise NotImplementedError
+
+    @abstractmethod
     def structured_json(
         self,
         system_prompt: str,
@@ -29,6 +38,14 @@ class LLMClient(ABC):
 
 
 class NullLLMClient(LLMClient):
+    def chat(
+        self,
+        system_prompt: str,
+        messages: list[dict[str, str]],
+        temperature: float = 0.4,
+    ) -> str:
+        raise RuntimeError("No LLM provider is configured.")
+
     def structured_json(
         self,
         system_prompt: str,
@@ -57,6 +74,21 @@ class GeminiLLMClient(LLMClient):
 
         genai.configure(api_key=api_key)
         self._model = genai.GenerativeModel(model_name)
+
+    def chat(
+        self,
+        system_prompt: str,
+        messages: list[dict[str, str]],
+        temperature: float = 0.4,
+    ) -> str:
+        prompt = (
+            f"{system_prompt}\n\n"
+            "Conversation:\n"
+            f"{json.dumps(messages, indent=2)}\n\n"
+            "Reply as the assistant. Keep it short, helpful, and conversational."
+        )
+        response = self._model.generate_content(prompt, generation_config={"temperature": temperature})
+        return response.text.strip()
 
     def structured_json(
         self,

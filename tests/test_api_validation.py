@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from app.api.schemas import UserCreate
+from app.api.schemas import UserCreate, UserUpdate
 
 
 def valid_user_payload() -> dict:
@@ -30,3 +30,14 @@ def test_user_create_accepts_pullup_bar_and_other() -> None:
     user = UserCreate.model_validate(payload)
 
     assert user.equipment == ["body only", "pull-up bar", "other"]
+
+
+def test_user_update_allows_partial_payload() -> None:
+    update = UserUpdate.model_validate({"days_per_week": 4})
+
+    assert update.days_per_week == 4
+
+
+def test_user_update_rejects_unknown_equipment() -> None:
+    with pytest.raises(ValidationError, match="Unknown equipment"):
+        UserUpdate.model_validate({"equipment": ["dumbbells"]})

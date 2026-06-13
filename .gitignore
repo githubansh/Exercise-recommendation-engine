@@ -5,6 +5,10 @@ __pycache__/
 .ruff_cache/
 .venv/
 venv/
+node_modules/
+*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
 .env
 *.db
 *.sqlite

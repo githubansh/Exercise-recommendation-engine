@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from statistics import mean
 
 from sqlalchemy import select
@@ -123,6 +124,76 @@ class FeedbackService:
             allow_progression=policy["allow_progression"],
             deload=policy["deload"],
         )
+
+    def progress_summary(self, db: Session, user_id: int) -> dict:
+        rows = db.execute(
+            select(SessionLog, PlanDay, Plan)
+            .join(PlanDay, PlanDay.id == SessionLog.plan_day_id)
+            .join(Plan, Plan.id == PlanDay.plan_id)
+            .where(Plan.user_id == user_id)
+            .order_by(SessionLog.completed_at.desc())
+        ).all()
+        sessions = []
+        completed_slots = 0
+        skipped_slots = 0
+        skipped_names: Counter[str] = Counter()
+        rpes = []
+        for log, day, plan in rows:
+            feedback_rows = db.execute(
+                select(SlotFeedback, PlanSlot)
+                .join(PlanSlot, PlanSlot.id == SlotFeedback.plan_slot_id)
+                .where(SlotFeedback.session_log_id == log.id)
+            ).all()
+            completed = []
+            skipped = []
+            for feedback, slot in feedback_rows:
+                item = {
+                    "slot_id": slot.id,
+                    "exercise_id": slot.exercise_id,
+                    "exercise_name": slot.exercise.name if slot.exercise else slot.exercise_id,
+                    "reward": feedback.reward,
+                }
+                if feedback.status == "completed":
+                    completed.append(item)
+                elif feedback.status == "skipped":
+                    skipped.append(item)
+                    skipped_names[item["exercise_name"]] += 1
+            completed_slots += len(completed)
+            skipped_slots += len(skipped)
+            if log.rpe is not None:
+                rpes.append(log.rpe)
+            sessions.append(
+                {
+                    "id": log.id,
+                    "plan_id": plan.id,
+                    "plan_day_id": day.id,
+                    "week_index": plan.week_index,
+                    "day_index": day.day_index,
+                    "focus": day.focus,
+                    "completed_at": log.completed_at,
+                    "rpe": log.rpe,
+                    "duration_min": log.duration_min,
+                    "notes": log.notes,
+                    "completed_count": len(completed),
+                    "skipped_count": len(skipped),
+                    "completed_exercises": completed,
+                    "skipped_exercises": skipped,
+                }
+            )
+        total_slots = completed_slots + skipped_slots
+        return {
+            "user_id": user_id,
+            "logged_sessions": len(sessions),
+            "completed_slots": completed_slots,
+            "skipped_slots": skipped_slots,
+            "adherence": completed_slots / total_slots if total_slots else 0,
+            "average_rpe": mean(rpes) if rpes else None,
+            "most_skipped": [
+                {"exercise_name": name, "count": count}
+                for name, count in skipped_names.most_common(5)
+            ],
+            "recent_sessions": sessions[:10],
+        }
 
 
 feedback_service = FeedbackService()
