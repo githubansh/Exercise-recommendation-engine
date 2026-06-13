@@ -25,12 +25,14 @@ Then open:
 - API docs: <http://localhost:8000/docs>
 - Health: <http://localhost:8000/health>
 
-Initial database setup inside the app container:
+The app container runs database setup automatically on startup:
 
-```powershell
-docker compose exec app alembic upgrade head
-docker compose exec app python -m seeds.load_seeds
-```
+- `alembic upgrade head`
+- `python -m seeds.bootstrap`
+
+`seeds.bootstrap` loads the exercise catalog, safety metadata, and MiniLM
+embeddings only when the deployed database is empty or missing embeddings. Set
+`FORCE_SEED_DATA=true` to force a reload.
 
 Run tests:
 
@@ -42,9 +44,31 @@ docker compose exec app python -m pytest -q
 
 The prototype UI is maintained separately from this backend repository:
 
-- Frontend repo: <https://github.com/githubansh/Exercise-recommendation-engine-frontend>
+- Frontend repo: <https://github.com/githubansh/ui-fit-engine>
 - Local dev URL: <http://127.0.0.1:5173/>
 - Backend API URL: <http://localhost:8000/>
+
+## Render Deploy
+
+The Docker startup command runs migrations and seed checks automatically, so no
+Render shell is required for the free tier.
+
+Set these environment variables in Render:
+
+```text
+DATABASE_URL=<your Render/Neon/Postgres URL>
+GEMINI_API_KEY=<your real Gemini key>
+GEMINI_MODEL=gemini-flash-latest
+EMBEDDING_MODEL_NAME=sentence-transformers/all-MiniLM-L6-v2
+RUN_DB_MIGRATIONS=true
+RUN_SEED_DATA=true
+FORCE_SEED_DATA=false
+CORS_ORIGINS=https://<your-vercel-app>.vercel.app,http://localhost:5173,http://127.0.0.1:5173
+```
+
+On the first deploy the service may take longer while MiniLM downloads and
+embeddings are generated. Later deploys skip seeding unless the database is
+empty, embeddings are missing, or `FORCE_SEED_DATA=true`.
 
 ## Current Build Slice
 
