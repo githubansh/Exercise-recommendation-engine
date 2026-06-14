@@ -17,3 +17,20 @@ def test_runtime_embeddings_are_disabled_by_default() -> None:
     settings = Settings(_env_file=None)
 
     assert settings.enable_runtime_embeddings is False
+
+
+def test_cors_origins_accepts_plural_env_name(monkeypatch) -> None:
+    monkeypatch.setenv("CORS_ORIGINS", "https://ui-fit-engine.vercel.app")
+
+    settings = Settings(_env_file=None)
+
+    assert settings.cors_origins == "https://ui-fit-engine.vercel.app"
+
+
+def test_cors_origins_accepts_singular_env_name(monkeypatch) -> None:
+    monkeypatch.delenv("CORS_ORIGINS", raising=False)
+    monkeypatch.setenv("CORS_ORIGIN", "https://ui-fit-engine.vercel.app")
+
+    settings = Settings(_env_file=None)
+
+    assert settings.cors_origins == "https://ui-fit-engine.vercel.app"
