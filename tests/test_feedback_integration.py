@@ -51,7 +51,7 @@ def test_log_session_is_idempotent_per_day() -> None:
             skipped_slot_ids=[],
         )
 
-        with pytest.raises(ValueError, match="already has a logged session"):
+        with pytest.raises(ValueError) as exc_info:
             feedback_service.log_session(
                 db,
                 plan_day_id=day.id,
@@ -59,6 +59,7 @@ def test_log_session_is_idempotent_per_day() -> None:
                 completed_slot_ids=[day.slots[0].id],
                 skipped_slot_ids=[],
             )
+        assert str(exc_info.value) == "This workout has already been saved."
 
 
 @requires_db

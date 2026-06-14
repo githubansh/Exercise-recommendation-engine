@@ -65,7 +65,7 @@ class FeedbackService:
             raise ValueError(f"Plan day {plan_day_id} does not exist")
         existing = db.scalar(select(SessionLog).where(SessionLog.plan_day_id == plan_day_id))
         if existing:
-            raise ValueError(f"Day {plan_day_id} already has a logged session (id={existing.id}).")
+            raise ValueError("This workout has already been saved.")
         plan = db.get(Plan, day.plan_id)
         user = plan_user(db, plan)
         planned_ids = {slot.id for slot in day.slots}

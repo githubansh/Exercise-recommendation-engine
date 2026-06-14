@@ -15,7 +15,8 @@ def log_session(payload: SessionLogRequest, db: Session = Depends(get_db)) -> di
     try:
         log = feedback_service.log_session(db, **payload.model_dump())
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        status_code = 409 if str(exc) == "This workout has already been saved." else 400
+        raise HTTPException(status_code=status_code, detail=str(exc)) from exc
     return {
         "id": log.id,
         "plan_day_id": log.plan_day_id,
