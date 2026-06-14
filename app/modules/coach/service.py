@@ -8,8 +8,10 @@ from sqlalchemy.orm import Session
 
 from app.api.serializers import exercise_dict, plan_dict, slot_dict
 from app.core.llm import get_llm_client
-from app.core.models import Plan, PlanDay, PlanSlot, User
+from app.core.models import InjuryProfile, Plan, PlanDay, PlanSlot, User
 from app.modules.feedback.service import feedback_service
+from app.modules.planner.service import planner_service
+from app.modules.profile.service import profile_service
 from app.modules.substitution.service import substitution_service
 
 
@@ -136,6 +138,8 @@ class CoachService:
         slot_id = self.extract_int_after(text, "slot")
         day_id = self.extract_int_after(text, "day")
 
+        if self.is_safety_update(message):
+            return {"name": "update_safety_profile", "arguments": {"text": message}}
         if "explain" in text and slot_id:
             return {"name": "explain_slot", "arguments": {"slot_id": slot_id}}
         if ("alternative" in text or "swap option" in text) and slot_id:
@@ -186,6 +190,8 @@ class CoachService:
                 list(arguments.get("completed", [])),
                 list(arguments.get("skipped", [])),
             )
+        if name == "update_safety_profile":
+            return self.update_safety_profile(db, user_id, str(arguments["text"]))
         raise ValueError(f"Unsupported tool: {name}")
 
     def get_current_plan(self, db: Session, user_id: int) -> dict:
@@ -281,6 +287,48 @@ class CoachService:
         )
         return {"session_log_id": log.id, "plan_day_id": log.plan_day_id, "rpe": log.rpe}
 
+    def update_safety_profile(self, db: Session, user_id: int, text: str) -> dict:
+        active_plan = self.active_plan_model(db, user_id)
+        intake = self.deterministic_safety_intake(db, user_id, text) or profile_service.parse_intake_text(db, user_id, text)
+        saved_injuries = intake.get("injuries") or []
+        saved_exclusions = intake.get("exclusions") or []
+        if intake.get("requires_structured_form") or not (saved_injuries or saved_exclusions):
+            return {"intake": intake, "plan": plan_dict(active_plan) if active_plan else None, "updated": False}
+
+        next_plan = None
+        if active_plan is not None:
+            next_plan = planner_service.generate_plan(
+                db,
+                user_id,
+                week_index=active_plan.week_index,
+                mode_note="Safety profile updated from coach; plan regenerated with current injury rules.",
+            )
+        return {"intake": intake, "plan": plan_dict(next_plan) if next_plan else None, "updated": True}
+
+    def deterministic_safety_intake(self, db: Session, user_id: int, text: str) -> dict | None:
+        parsed = profile_service.deterministic_parse(text)
+        if not parsed.injuries and not parsed.exclusions_by_name:
+            return None
+        valid_codes = set(db.scalars(select(InjuryProfile.code)).all())
+        saved_injuries = profile_service.persist_injuries(db, user_id, parsed, valid_codes)
+        saved_exclusions, unresolved_exclusions = profile_service.persist_exclusions(db, user_id, parsed.exclusions_by_name)
+        db.commit()
+        return {
+            "source": "deterministic_fallback",
+            "requires_structured_form": False,
+            "injuries": saved_injuries,
+            "exclusions": saved_exclusions,
+            "unresolved_exclusions_by_name": unresolved_exclusions,
+            "preferences_text": parsed.preferences_text,
+        }
+
+    def active_plan_model(self, db: Session, user_id: int) -> Plan | None:
+        return db.scalar(
+            select(Plan)
+            .where(Plan.user_id == user_id, Plan.status == "active")
+            .order_by(Plan.week_index.desc(), Plan.id.desc())
+        )
+
     def summarize_tool_result(self, tool_name: str, result: dict) -> str:
         if tool_name == "get_current_plan":
             days = result.get("days") or []
@@ -301,6 +349,15 @@ class CoachService:
             return f"I updated today's workout to fit about {result.get('available_minutes')} minutes. Open Today to see the changed plan."
         if tool_name == "log_feedback":
             return "Workout feedback logged. Open Progress to see what FitEngine learned."
+        if tool_name == "update_safety_profile":
+            intake = result.get("intake") or {}
+            injuries = intake.get("injuries") or []
+            if result.get("updated") and injuries:
+                names = ", ".join(item.get("injury_code", "injury") for item in injuries)
+                return f"Safety profile updated for {names}. I regenerated your active plan using the new safety rules."
+            if intake.get("requires_structured_form"):
+                return intake.get("medical_warning") or "I could not safely update this from chat. Please use Profile to review the injury details."
+            return "I could not find a supported injury or exclusion to update. Please use Profile if you need a specific safety rule."
         return "Tool completed."
 
     def system_prompt(self) -> str:
@@ -317,6 +374,7 @@ class CoachService:
             {"name": "swap_exercise", "parameters": {"slot_id": "int", "exercise_id": "str"}},
             {"name": "replan_session", "parameters": {"plan_day_id": "int", "available_minutes": "int"}},
             {"name": "log_feedback", "parameters": {"plan_day_id": "int", "rpe": "int", "completed": "list[int]", "skipped": "list[int]"}},
+            {"name": "update_safety_profile", "parameters": {"text": "str"}},
         ]
 
     def allowed_tool_names(self) -> set[str]:
@@ -332,6 +390,8 @@ class CoachService:
             return any(term in text for term in ["minute", "minutes", "time", "shorter", "only have"])
         if tool_name == "log_feedback":
             return any(term in text for term in ["log", "rpe", "completed", "skipped", "done"])
+        if tool_name == "update_safety_profile":
+            return self.is_safety_update(message)
         return True
 
     def medical_red_flag(self, message: str) -> str | None:
@@ -368,6 +428,24 @@ class CoachService:
     def is_swap_help(self, message: str) -> bool:
         text = message.lower()
         return "swap" in text and "slot" not in text
+
+    def is_safety_update(self, message: str) -> bool:
+        text = message.lower()
+        body_parts = [
+            "knee",
+            "lower back",
+            "back pain",
+            "shoulder",
+            "wrist",
+            "elbow",
+            "ankle",
+            "hip",
+            "neck",
+            "hernia",
+            "hamstring",
+        ]
+        injury_terms = ["injury", "injured", "pain", "hurts", "hurt", "strain", "tendinitis", "tendonitis"]
+        return any(part in text for part in body_parts) and any(term in text for term in injury_terms)
 
     def extract_int_after(self, text: str, label: str) -> int | None:
         match = re.search(rf"{re.escape(label)}\s*#?:?\s*(\d+)", text)

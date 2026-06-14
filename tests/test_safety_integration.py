@@ -4,7 +4,8 @@ import pytest
 from sqlalchemy import select
 
 from app.core.db import SessionLocal
-from app.core.models import ExercisePattern, InjuryProfile
+from app.core.models import ExercisePattern, InjuryProfile, Plan, UserInjury
+from app.modules.coach.service import coach_service
 from app.modules.planner.service import planner_service
 from app.modules.profile.service import profile_service
 from app.modules.substitution.service import substitution_service
@@ -114,3 +115,41 @@ def test_lower_back_user_never_receives_blocked_patterns_or_swap_alternatives() 
         alternatives = substitution_service.alternatives(db, first_slot.id, k=10)
         for item in alternatives:
             assert item["exercise"].id not in flagged_ids
+
+
+@requires_db
+def test_coach_injury_update_persists_safety_profile_and_regenerates_plan() -> None:
+    with SessionLocal() as db:
+        if not seeded_database_available(db):
+            pytest.skip("seeded database required")
+        user = profile_service.create_user(
+            db,
+            {
+                "name": "Coach Safety",
+                "age": 28,
+                "sex": "m",
+                "height_cm": 175,
+                "weight_kg": 75,
+                "level": "beginner",
+                "goal": "hypertrophy",
+                "days_per_week": 3,
+                "minutes_per_session": 35,
+                "equipment": ["body only", "dumbbell", "machine"],
+                "injuries": [],
+            },
+        )
+        old_plan = planner_service.generate_plan(db, user.id, week_index=1)
+
+        response = coach_service.chat(db, user_id=user.id, message="I have a knee injury", history=[])
+
+        injury = db.get(UserInjury, {"user_id": user.id, "injury_code": "knee_pain"})
+        active_plan = db.scalar(select(Plan).where(Plan.user_id == user.id, Plan.status == "active"))
+        db.refresh(old_plan)
+
+        assert injury is not None
+        assert injury.severity == "moderate"
+        assert old_plan.status == "replaced"
+        assert active_plan is not None
+        assert active_plan.id != old_plan.id
+        assert response["tool_results"][0]["tool"] == "update_safety_profile"
+        assert "Safety profile updated" in response["message"]

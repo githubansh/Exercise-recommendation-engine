@@ -39,6 +39,11 @@ def test_coach_routes_today_time_request_to_default_day() -> None:
     assert call == {"name": "replan_session", "arguments": {"plan_day_id": 99, "available_minutes": 20}}
 
 
+def test_coach_routes_supported_injury_update() -> None:
+    call = CoachService().deterministic_tool_call("I have a knee injury")
+    assert call == {"name": "update_safety_profile", "arguments": {"text": "I have a knee injury"}}
+
+
 def test_coach_head_injury_is_medical_red_flag() -> None:
     warning = CoachService().medical_red_flag("I have a head injury")
     assert warning is not None

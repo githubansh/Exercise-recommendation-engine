@@ -25,6 +25,7 @@ class CatalogService:
         db: Session,
         *,
         max_level: str | None = None,
+        exact_level: str | None = None,
         equipment: set[str] | None = None,
         category: str | None = None,
         categories: set[str] | None = None,
@@ -32,6 +33,8 @@ class CatalogService:
         allow_one_above: bool = False,
     ) -> list[Exercise]:
         stmt: Select[tuple[Exercise]] = select(Exercise)
+        if exact_level is not None:
+            stmt = stmt.where(Exercise.level == exact_level)
         if equipment is not None:
             stmt = stmt.where(Exercise.equipment.in_(sorted(equipment)))
         if category is not None:
@@ -42,7 +45,7 @@ class CatalogService:
             stmt = stmt.where(Exercise.muscle_groups.any(muscle_group))
 
         rows = list(db.scalars(stmt).all())
-        if max_level is None:
+        if max_level is None or exact_level is not None:
             return rows
         return [exercise for exercise in rows if level_allowed(exercise.level, max_level, allow_one_above)]
 
@@ -58,6 +61,7 @@ class CatalogService:
         candidates = self.list_by_filters(
             db,
             max_level=filters.get("max_level"),
+            exact_level=filters.get("exact_level"),
             equipment=set(filters["equipment"]) if filters.get("equipment") else None,
             category=filters.get("category"),
             categories=set(filters["categories"]) if filters.get("categories") else None,

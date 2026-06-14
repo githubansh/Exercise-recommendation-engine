@@ -21,7 +21,7 @@ def search_exercises(
     filters = {
         "muscle_group": muscle,
         "equipment": set(equipment) if equipment else None,
-        "max_level": level,
+        "exact_level": level,
     }
     return [exercise_dict(item) for item in catalog_service.semantic_search(db, q, k=20, filters=filters)]
 

@@ -246,9 +246,12 @@ class ProfileService:
                 self.validate_injury_codes(parsed, valid_codes)
                 return parsed, "llm_retry"
             except Exception:
+                deterministic = self.deterministic_parse(free_text)
+                if deterministic.injuries or deterministic.exclusions_by_name or deterministic.preferences_text:
+                    return deterministic, "deterministic_fallback"
                 if settings.gemini_api_key:
                     return ParsedIntake(), "structured_form_required"
-                return self.deterministic_parse(free_text), "deterministic_fallback"
+                return deterministic, "deterministic_fallback"
 
     def validate_injury_codes(self, parsed: ParsedIntake, valid_codes: set[str]) -> None:
         invalid = [injury.code for injury in parsed.injuries if injury.code not in valid_codes]
