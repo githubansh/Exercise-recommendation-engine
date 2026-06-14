@@ -23,7 +23,7 @@ services:
       DATABASE_URL: postgresql+psycopg://fitengine:fitengine@db:5432/fitengine
       EMBEDDING_MODEL_NAME: sentence-transformers/all-MiniLM-L6-v2
       GEMINI_API_KEY: ${GEMINI_API_KEY}
-      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-flash-latest}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-1.5-flash}
     ports:
       - "8000:8000"
     depends_on:

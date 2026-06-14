@@ -58,7 +58,7 @@ Set these environment variables in Render:
 ```text
 DATABASE_URL=<your Render/Neon/Postgres URL>
 GEMINI_API_KEY=<your real Gemini key>
-GEMINI_MODEL=gemini-flash-latest
+GEMINI_MODEL=gemini-1.5-flash
 EMBEDDING_MODEL_NAME=sentence-transformers/all-MiniLM-L6-v2
 ENABLE_RUNTIME_EMBEDDINGS=false
 RUN_DB_MIGRATIONS=true
@@ -75,6 +75,9 @@ instance, set it to `true` to enable vector search for arbitrary text queries.
 
 Later deploys skip seeding unless the database is empty, embeddings are
 missing, or `FORCE_SEED_DATA=true`.
+
+Set `GEMINI_API_KEY` in Render's environment variables. Do not commit the key
+to GitHub.
 
 ## Current Build Slice
 

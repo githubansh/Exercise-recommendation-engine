@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     embedding_model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
     enable_runtime_embeddings: bool = False
     gemini_api_key: str | None = None
-    gemini_model: str = "gemini-flash-latest"
+    gemini_model: str = "gemini-1.5-flash"
     imagekit_base_url: str = "https://ik.imagekit.io/yuhonas"
     cors_origins: str = Field(
         default="http://localhost:5173,http://127.0.0.1:5173",

@@ -1,4 +1,5 @@
-from app.modules.feedback.service import adaptation_policy, slot_reward
+from app.core.models import PlanSlot
+from app.modules.feedback.service import FeedbackService, adaptation_policy, slot_reward
 
 
 def test_completed_reward_prefers_target_rpe() -> None:
@@ -24,3 +25,18 @@ def test_adaptation_policy_progresses_easy_high_adherence() -> None:
 def test_adaptation_policy_deloads_high_rpe() -> None:
     policy = adaptation_policy(adherence=0.8, mean_rpe=9, days_per_week=4)
     assert policy["deload"] is True
+
+
+def test_adherence_uses_completed_over_countable_non_deferred_slots() -> None:
+    slots = [
+        PlanSlot(id=1, plan_day_id=1, slot_index=1, exercise_id="a", status="completed", sets=3, reps="8-12", rest_sec=90, rpe_target=8, rationale=""),
+        PlanSlot(id=2, plan_day_id=1, slot_index=2, exercise_id="b", status="planned", sets=3, reps="8-12", rest_sec=90, rpe_target=8, rationale=""),
+        PlanSlot(id=3, plan_day_id=1, slot_index=3, exercise_id="c", status="skipped", sets=3, reps="8-12", rest_sec=90, rpe_target=8, rationale=""),
+        PlanSlot(id=4, plan_day_id=1, slot_index=4, exercise_id="d", status="deferred", sets=3, reps="8-12", rest_sec=90, rpe_target=8, rationale=""),
+    ]
+
+    adherence, completed_count, countable_count = FeedbackService().adherence(slots)
+
+    assert adherence == 1 / 3
+    assert completed_count == 1
+    assert countable_count == 3

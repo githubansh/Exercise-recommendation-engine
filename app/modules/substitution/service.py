@@ -66,31 +66,46 @@ class SubstitutionService:
         slot = db.get(PlanSlot, slot_id)
         if slot is None:
             raise ValueError(f"Slot {slot_id} does not exist")
-        valid_ids = {item["exercise"].id for item in self.alternatives(db, slot_id, k=20)}
-        if new_exercise_id not in valid_ids:
-            raise ValueError("New exercise must come from the safe alternatives list.")
-        old_exercise_id = slot.exercise_id
-        slot.exercise_id = new_exercise_id
-        slot.status = "swapped"
-        new_exercise = catalog_service.get_exercise(db, new_exercise_id)
-        budget_note = ""
         day = db.get(PlanDay, slot.plan_day_id)
         plan = db.get(Plan, day.plan_id)
         user = plan_user(db, plan)
-        if new_exercise:
-            projected_minutes = day_minutes(
-                day,
-                override={slot.id: (slot.sets, new_exercise.mechanic)},
+
+        new_exercise = catalog_service.get_exercise(db, new_exercise_id)
+        if new_exercise is None:
+            raise ValueError(f"Exercise {new_exercise_id} does not exist.")
+        if not safety_service.is_safe(db, user.id, new_exercise_id):
+            raise ValueError(f"Exercise {new_exercise_id} is blocked by your safety rules.")
+        allowed_equipment = set(user.equipment or []) | {"body only"}
+        if new_exercise.equipment not in allowed_equipment:
+            raise ValueError(f"Exercise {new_exercise_id} requires {new_exercise.equipment} which you do not have.")
+        in_plan = db.scalar(
+            select(PlanSlot.id)
+            .join(PlanDay, PlanDay.id == PlanSlot.plan_day_id)
+            .where(
+                PlanDay.plan_id == plan.id,
+                PlanSlot.exercise_id == new_exercise_id,
+                PlanSlot.id != slot.id,
             )
-            if projected_minutes > user.minutes_per_session and slot.sets > 1:
-                slot.sets -= 1
-                budget_note = f", reduced to {slot.sets} sets to fit your {user.minutes_per_session}-minute session"
-        if new_exercise:
-            group = primary_group(new_exercise) or (new_exercise.muscle_groups[0] if new_exercise.muscle_groups else "general")
-            slot.rationale = (
-                f"{new_exercise.name}: targets {group}, {new_exercise.level} level matches you, "
-                f"{new_exercise.equipment} available, swapped from {old_exercise_id}{budget_note}"
-            )
+        )
+        if in_plan:
+            raise ValueError(f"Exercise {new_exercise_id} is already in this plan.")
+
+        old_exercise_id = slot.exercise_id
+        slot.exercise_id = new_exercise_id
+        slot.status = "swapped"
+        budget_note = ""
+        projected_minutes = day_minutes(
+            day,
+            override={slot.id: (slot.sets, new_exercise.mechanic)},
+        )
+        if projected_minutes > user.minutes_per_session and slot.sets > 1:
+            slot.sets -= 1
+            budget_note = f", reduced to {slot.sets} sets to fit your {user.minutes_per_session}-minute session"
+        group = primary_group(new_exercise) or (new_exercise.muscle_groups[0] if new_exercise.muscle_groups else "general")
+        slot.rationale = (
+            f"{new_exercise.name}: targets {group}, {new_exercise.level} level matches you, "
+            f"{new_exercise.equipment} available, swapped from {old_exercise_id}{budget_note}"
+        )
         db.add(
             SwapEvent(
                 plan_slot_id=slot.id,

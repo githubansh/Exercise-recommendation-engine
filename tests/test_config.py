@@ -19,6 +19,13 @@ def test_runtime_embeddings_are_disabled_by_default() -> None:
     assert settings.enable_runtime_embeddings is False
 
 
+def test_gemini_model_default_is_real_model_identifier(monkeypatch) -> None:
+    monkeypatch.delenv("GEMINI_MODEL", raising=False)
+    settings = Settings(_env_file=None)
+
+    assert settings.gemini_model == "gemini-1.5-flash"
+
+
 def test_cors_origins_accepts_plural_env_name(monkeypatch) -> None:
     monkeypatch.setenv("CORS_ORIGINS", "https://ui-fit-engine.vercel.app")
 

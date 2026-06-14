@@ -44,6 +44,11 @@ def adaptation_policy(adherence: float, mean_rpe: float, days_per_week: int) -> 
 
 
 class FeedbackService:
+    def adherence(self, planned_slots: list[PlanSlot]) -> tuple[float, int, int]:
+        countable = [slot for slot in planned_slots if slot.status != "deferred"]
+        completed = [slot for slot in countable if slot.status == "completed"]
+        return (len(completed) / max(len(countable), 1), len(completed), len(countable))
+
     def log_session(
         self,
         db: Session,
@@ -109,9 +114,7 @@ class FeedbackService:
                 .where(PlanDay.plan_id == plan.id)
             ).all()
         )
-        countable = [slot for slot in planned_slots if slot.status != "deferred"]
-        completed = [slot for slot in countable if slot.status == "completed"]
-        adherence = len(completed) / max(len(countable), 1)
+        adherence, _completed_count, _countable_count = self.adherence(planned_slots)
         rpes = list(db.scalars(select(SessionLog.rpe).join(PlanDay, PlanDay.id == SessionLog.plan_day_id).where(PlanDay.plan_id == plan.id)).all())
         mean_rpe = mean([rpe for rpe in rpes if rpe is not None]) if rpes else 7
         policy = adaptation_policy(adherence, mean_rpe, user.days_per_week)
@@ -134,6 +137,15 @@ class FeedbackService:
             .order_by(SessionLog.completed_at.desc())
         ).all()
         sessions = []
+        planned_slots = list(
+            db.scalars(
+                select(PlanSlot)
+                .join(PlanDay, PlanDay.id == PlanSlot.plan_day_id)
+                .join(Plan, Plan.id == PlanDay.plan_id)
+                .where(Plan.user_id == user_id)
+            ).all()
+        )
+        adherence, _completed_count, _countable_count = self.adherence(planned_slots)
         completed_slots = 0
         skipped_slots = 0
         skipped_names: Counter[str] = Counter()
@@ -180,13 +192,12 @@ class FeedbackService:
                     "skipped_exercises": skipped,
                 }
             )
-        total_slots = completed_slots + skipped_slots
         return {
             "user_id": user_id,
             "logged_sessions": len(sessions),
             "completed_slots": completed_slots,
             "skipped_slots": skipped_slots,
-            "adherence": completed_slots / total_slots if total_slots else 0,
+            "adherence": adherence,
             "average_rpe": mean(rpes) if rpes else None,
             "most_skipped": [
                 {"exercise_name": name, "count": count}
