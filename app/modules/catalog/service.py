@@ -97,7 +97,6 @@ class CatalogService:
         if not candidates:
             return []
         if not settings.enable_runtime_embeddings:
-            mark_vector_search_degraded("Runtime embedding search disabled; falling back to lexical similarity.")
             return None
         try:
             query_vector = embed_text(query_text)

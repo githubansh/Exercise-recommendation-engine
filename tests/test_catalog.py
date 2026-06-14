@@ -1,4 +1,4 @@
-from app.modules.catalog.service import CatalogService, cosine_vectors
+from app.modules.catalog.service import CatalogService, cosine_vectors, vector_search_status
 
 
 def test_cosine_vectors_scores_semantic_vectors() -> None:
@@ -11,3 +11,4 @@ def test_vector_search_skips_runtime_embeddings_by_default() -> None:
     service = CatalogService()
 
     assert service._vector_search(None, "push exercise", [object()], 5) is None
+    assert vector_search_status() == "ok"
