@@ -5,6 +5,7 @@ from sqlalchemy import select
 
 from app.core.db import SessionLocal
 from app.core.models import ExercisePattern, InjuryProfile
+from app.api.serializers import plan_dict
 from app.modules.feedback.service import feedback_service
 from app.modules.planner.service import planner_service
 from app.modules.profile.service import profile_service
@@ -60,6 +61,27 @@ def test_log_session_is_idempotent_per_day() -> None:
                 skipped_slot_ids=[],
             )
         assert str(exc_info.value) == "This workout has already been saved."
+
+
+@requires_db
+def test_plan_days_report_logged_sessions() -> None:
+    with SessionLocal() as db:
+        if not seeded_database_available(db):
+            pytest.skip("seeded database required")
+        plan = create_demo_plan(db)
+        day = plan.days[0]
+
+        assert plan_dict(plan)["days"][0]["logged"] is False
+
+        feedback_service.log_session(
+            db,
+            plan_day_id=day.id,
+            rpe=7,
+            completed_slot_ids=[slot.id for slot in day.slots],
+            skipped_slot_ids=[],
+        )
+
+        assert plan_dict(plan)["days"][0]["logged"] is True
 
 
 @requires_db

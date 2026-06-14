@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from app.core.models import Exercise, Plan, PlanDay, PlanSlot, User
+from sqlalchemy import select
+from sqlalchemy.orm import object_session
+
+from app.core.models import Exercise, Plan, PlanDay, PlanSlot, SessionLog, User
 from app.core.config import settings
 
 
@@ -60,10 +63,15 @@ def slot_dict(slot: PlanSlot) -> dict:
 
 
 def day_dict(day: PlanDay) -> dict:
+    session = object_session(day)
+    logged = False
+    if session is not None:
+        logged = session.scalar(select(SessionLog.id).where(SessionLog.plan_day_id == day.id).limit(1)) is not None
     return {
         "id": day.id,
         "day_index": day.day_index,
         "focus": day.focus,
+        "logged": logged,
         "slots": [slot_dict(slot) for slot in day.slots],
     }
 
