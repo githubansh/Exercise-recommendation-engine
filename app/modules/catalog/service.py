@@ -92,6 +92,9 @@ class CatalogService:
     ) -> list[Exercise] | None:
         if not candidates:
             return []
+        if not settings.enable_runtime_embeddings:
+            mark_vector_search_degraded("Runtime embedding search disabled; falling back to lexical similarity.")
+            return None
         try:
             query_vector = embed_text(query_text)
             distance_expr = ExerciseEmbedding.embedding.cosine_distance(query_vector).label("distance")

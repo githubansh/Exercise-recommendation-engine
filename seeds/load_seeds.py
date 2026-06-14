@@ -13,6 +13,7 @@ from app.core.config import settings
 from seeds.curation import apply_data_corrections, curated_exercise
 
 ROOT = Path(__file__).resolve().parent
+PRECOMPUTED_EMBEDDINGS_PATH = ROOT / "exercise_embeddings.json"
 
 
 def load_yaml(path: Path) -> dict:
@@ -34,6 +35,13 @@ def compute_embeddings(texts: list[str]) -> list[list[float]]:
     model = SentenceTransformer(settings.embedding_model_name)
     vectors = model.encode(texts, normalize_embeddings=True)
     return [vector.tolist() for vector in vectors]
+
+
+def load_precomputed_embeddings(path: Path = PRECOMPUTED_EMBEDDINGS_PATH) -> dict[str, list[float]]:
+    if not path.exists():
+        return {}
+    rows = json.loads(path.read_text(encoding="utf-8"))
+    return {exercise_id: vector for exercise_id, vector in rows}
 
 
 def upsert_exercises(db: Session, raw_exercises: list[dict]) -> list[dict]:
@@ -80,8 +88,21 @@ def replace_injury_profiles(db: Session, profiles: dict) -> None:
 
 def replace_embeddings(db: Session, exercises: list[dict]) -> None:
     db.query(ExerciseEmbedding).delete()
-    texts = [embedding_text(exercise) for exercise in exercises]
-    for exercise, vector in zip(exercises, compute_embeddings(texts), strict=True):
+    precomputed = load_precomputed_embeddings()
+    missing_ids = [exercise["id"] for exercise in exercises if exercise["id"] not in precomputed]
+
+    if missing_ids:
+        print(
+            "precomputed embeddings missing for "
+            f"{len(missing_ids)} exercises; computing embeddings with {settings.embedding_model_name}"
+        )
+        texts = [embedding_text(exercise) for exercise in exercises]
+        vectors = compute_embeddings(texts)
+    else:
+        print(f"using precomputed embeddings from {PRECOMPUTED_EMBEDDINGS_PATH.name}")
+        vectors = [precomputed[exercise["id"]] for exercise in exercises]
+
+    for exercise, vector in zip(exercises, vectors, strict=True):
         db.add(ExerciseEmbedding(exercise_id=exercise["id"], embedding=vector))
 
 

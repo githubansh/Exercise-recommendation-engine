@@ -60,15 +60,21 @@ DATABASE_URL=<your Render/Neon/Postgres URL>
 GEMINI_API_KEY=<your real Gemini key>
 GEMINI_MODEL=gemini-flash-latest
 EMBEDDING_MODEL_NAME=sentence-transformers/all-MiniLM-L6-v2
+ENABLE_RUNTIME_EMBEDDINGS=false
 RUN_DB_MIGRATIONS=true
 RUN_SEED_DATA=true
 FORCE_SEED_DATA=false
 CORS_ORIGINS=https://<your-vercel-app>.vercel.app,http://localhost:5173,http://127.0.0.1:5173
 ```
 
-On the first deploy the service may take longer while MiniLM downloads and
-embeddings are generated. Later deploys skip seeding unless the database is
-empty, embeddings are missing, or `FORCE_SEED_DATA=true`.
+The seed step uses committed precomputed MiniLM vectors from
+`seeds/exercise_embeddings.json`, so Render does not need to load the
+sentence-transformer during startup. Keep `ENABLE_RUNTIME_EMBEDDINGS=false` on
+Render free tier to avoid loading MiniLM on search requests. On a larger
+instance, set it to `true` to enable vector search for arbitrary text queries.
+
+Later deploys skip seeding unless the database is empty, embeddings are
+missing, or `FORCE_SEED_DATA=true`.
 
 ## Current Build Slice
 

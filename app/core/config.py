@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     app_name: str = "FitEngine"
     database_url: str = "postgresql+psycopg://fitengine:fitengine@localhost:5432/fitengine"
     embedding_model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
+    enable_runtime_embeddings: bool = False
     gemini_api_key: str | None = None
     gemini_model: str = "gemini-flash-latest"
     imagekit_base_url: str = "https://ik.imagekit.io/yuhonas"
