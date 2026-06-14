@@ -73,6 +73,7 @@ def plan_dict(plan: Plan) -> dict:
         "id": plan.id,
         "user_id": plan.user_id,
         "week_index": plan.week_index,
+        "version": plan.version,
         "split": plan.split,
         "status": plan.status,
         "params": plan.params,

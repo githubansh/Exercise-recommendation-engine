@@ -180,6 +180,7 @@ class FeedbackService:
                     "plan_id": plan.id,
                     "plan_day_id": day.id,
                     "week_index": plan.week_index,
+                    "version": plan.version,
                     "day_index": day.day_index,
                     "focus": day.focus,
                     "completed_at": log.completed_at,

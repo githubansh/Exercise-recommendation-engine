@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from math import ceil, floor
 
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -475,8 +476,9 @@ class PlannerService:
         }
         if user.goal in {"fat_loss", "endurance"}:
             params["conditioning_blocks"] = self.conditioning_blocks(user.goal, user.minutes_per_session)
+        version = self.next_version(db, user.id, week_index)
         db.query(Plan).filter(Plan.user_id == user.id, Plan.status == "active").update({"status": "replaced"})
-        plan = Plan(user_id=user.id, week_index=week_index, split=split, params=params)
+        plan = Plan(user_id=user.id, week_index=week_index, version=version, split=split, params=params)
         db.add(plan)
         db.flush()
         for day_index, (focus, slots) in enumerate(zip(focuses, planned_days, strict=True), start=1):
@@ -504,6 +506,12 @@ class PlannerService:
                     )
                 )
         return plan
+
+    def next_version(self, db: Session, user_id: int, week_index: int) -> int:
+        current = db.scalar(
+            select(func.max(Plan.version)).where(Plan.user_id == user_id, Plan.week_index == week_index)
+        )
+        return int(current or 0) + 1
 
     def conditioning_blocks(self, goal: str, minutes_per_session: int) -> list[dict[str, str | int]]:
         if goal == "fat_loss":

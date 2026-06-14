@@ -198,7 +198,7 @@ class CoachService:
         plan = db.scalar(
             select(Plan)
             .where(Plan.user_id == user_id, Plan.status == "active")
-            .order_by(Plan.week_index.desc(), Plan.id.desc())
+            .order_by(Plan.week_index.desc(), Plan.version.desc(), Plan.id.desc())
         )
         if plan is None:
             return {"plan": None}
@@ -208,7 +208,7 @@ class CoachService:
         plan = db.scalar(
             select(Plan)
             .where(Plan.user_id == user_id, Plan.status == "active")
-            .order_by(Plan.week_index.desc(), Plan.id.desc())
+            .order_by(Plan.week_index.desc(), Plan.version.desc(), Plan.id.desc())
         )
         if plan is None or not plan.days:
             return None
@@ -240,9 +240,6 @@ class CoachService:
         }
 
     def swap_exercise(self, db: Session, slot_id: int, exercise_id: str) -> dict:
-        allowed_ids = {item["exercise"].id for item in substitution_service.alternatives(db, slot_id, k=20)}
-        if exercise_id not in allowed_ids:
-            raise ValueError("Exercise must come from the current safe alternatives list.")
         return slot_dict(substitution_service.swap(db, slot_id, exercise_id))
 
     def replan_session(self, db: Session, plan_day_id: int, available_minutes: int) -> dict:
@@ -326,7 +323,7 @@ class CoachService:
         return db.scalar(
             select(Plan)
             .where(Plan.user_id == user_id, Plan.status == "active")
-            .order_by(Plan.week_index.desc(), Plan.id.desc())
+            .order_by(Plan.week_index.desc(), Plan.version.desc(), Plan.id.desc())
         )
 
     def summarize_tool_result(self, tool_name: str, result: dict) -> str:
@@ -334,7 +331,7 @@ class CoachService:
             days = result.get("days") or []
             if not days:
                 return "I could not find an active plan yet. Create a plan from setup first."
-            return f"Your active plan is Week {result.get('week_index', 1)} with {len(days)} training days. Open Plan or Today to review it."
+            return f"Your active plan is Week {result.get('week_index', 1)} v{result.get('version', 1)} with {len(days)} training days. Open Plan or Today to review it."
         if tool_name == "explain_slot":
             slot = result.get("slot", {})
             exercise = (slot.get("exercise") or {}).get("name", "this exercise")

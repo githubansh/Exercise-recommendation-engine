@@ -129,6 +129,7 @@ class Plan(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     week_index: Mapped[int] = mapped_column(nullable=False, default=1)
+    version: Mapped[int] = mapped_column(nullable=False, default=1)
     split: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(Text, nullable=False, default="active")
     params: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
